@@ -1,0 +1,20 @@
+      <div class="hcMarginTop3">
+        <hr>
+
+        <div class="hcRowLeft hcNestedItemMargin1">
+        {% if pkg_dict.metadata_created %}
+          <div>
+            <div class="hcLabel">Created</div>
+            <div>{% snippet 'snippets/local_friendly_datetime.html', datetime_obj=pkg_dict.metadata_created %}</div>
+          </div>
+        {% endif %}
+
+        {% if pkg_dict.metadata_modified %}
+          <div>
+            <div class="hcLabel">Last updated</div>
+            <div>{% snippet 'snippets/local_friendly_datetime.html', datetime_obj=pkg_dict.metadata_modified %}</div>
+          </div>
+        {% endif %}
+
+        </div>
+      </div>

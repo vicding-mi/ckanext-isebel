@@ -1,0 +1,170 @@
+{% ckan_extends %}
+
+{% block primary_content %}
+  <div class="hcLayoutMain hcBasicSideMargin">
+{#    {% block page_header %}#}
+{#    {% endblock %}#}
+{#    <div class="module-content">#}
+      {% if self.page_primary_action() | trim %}
+        <div class="page_primary_action">
+          {% block page_primary_action %}{% endblock %}
+        </div>
+      {% endif %}
+      {% block primary_content_inner %}
+        {{ super() }}
+        {% block package_creation_time %}
+            {% snippet "package/snippets/creation_time.html", pkg_dict=pkg %}
+        {% endblock %}
+      {% endblock %}
+    </div>
+{#  </div>#}
+{% endblock %}
+
+  {% block package_description %}
+    {% if pkg.private %}
+      <span class="dataset-private label label-inverse pull-right">
+        <i class="fa fa-lock"></i>
+        {{ _('Private') }}
+      </span>
+    {% endif %}
+    <h2>
+      {% block page_heading %}
+        {{ h.dataset_display_name(pkg) }}
+        {% if pkg.state.startswith('draft') %}
+          [{{ _('Draft') }}]
+        {% endif %}
+        {% if pkg.state == 'deleted' %}
+          [{{ _('Deleted') }}]
+        {% endif %}
+      {% endblock %}
+    </h2>
+    {% block package_notes %}
+      {% if pkg.notes %}
+          {# TODO: move the lang_list definiction to the controller #}
+          {% set lang_list = ['deu', 'nds', 'nl', 'nld', 'fry', 'dan', 'da', 'en', 'eng', 'is', 'isl'] %}
+          {% for extra in h.sorted_extras(pkg.extras) %}
+              {% set key, value = extra %}
+              {% if key in lang_list %}
+                  <div class="topic-title">{{ key }}</div>
+                  {{ h.render_markdown(value.replace('\n', '<br />'), True, True) }}
+              {% endif %}
+          {% endfor %}
+{#          {{ h.render_markdown(h.get_translated(pkg, 'notes').replace('\n', '<br />'), True, True) }}#}
+      {% endif %}
+    {% endblock %}
+
+  {% endblock %}
+
+  {% block package_resources %}
+  {% endblock %}
+
+  {% block package_tags %}
+  {% endblock %}
+
+  {% block package_additional_info %}
+      {% if c.userobj %}
+        {% snippet "package/snippets/additional_info.html", pkg_dict=pkg %}
+      {% endif %}
+  {% endblock %}
+
+
+{% block secondary %}
+  <div class="hcLayoutAside hcBasicSideMargin colorBgGreyLight hcContentDivider hcSmallTxt">
+    {% block secondary_content %}
+
+      {% block package_organization %}
+        {% if pkg.organization %}
+          {% block image %}
+            {% set org = h.get_organization(pkg.organization.name) %}
+            <div>
+                <img src="{{ org.image_display_url or h.url_for_static('/base/images/placeholder-organization.png') }}" alt="{{ org.name }}" />
+            </div>
+          {% endblock %}
+            <a href="{{ pkg.url }}">{{ pkg.url }}</a>
+            <div>
+              {%  set k, v = h.facet_get_extra_data_field(pkg.extras, 'Type') if h.facet_get_extra_data_field(pkg.extras, 'Type') else (None, None) %}
+              <strong>{% if v %} {{ v.decode('utf-8').strip().capitalize() }} {% endif %}&nbsp;</strong>
+            </div>
+
+            <div class="hcColumnsEqual">
+              {% set key, keywords = h.facet_get_extra_data_field(pkg.extras, '_keyword', True) if h.facet_get_extra_data_field(pkg.extras, '_keyword', True) else (None, None) %}
+              {% set keywords = keywords.split(';') if keywords else [] %}
+              {% for keyword in keywords %}
+                <div class="hcIsTags">
+                    <img alt="Keyword: {{ keyword.decode('utf-8').strip() }}" src="https://d33wubrfki0l68.cloudfront.net/fb601fac0a70dc030111b00f4dd3ee7fc84458b3/6d759/images/icons/icon-tag.png" class="hcTag">
+                    <a href="{{ h.add_url_param(h.url_for(controller='dataset', action='search'), new_params={key: keyword.decode('utf-8').strip()})  }}"> {{ keyword.decode('utf-8').strip() }}</a>
+                </div>
+              {% endfor %}
+            </div>
+
+            {% set persons = h.facet_get_similar_fields_from_extras(pkg.extras, 'person_') %}
+            <div>Persons:
+                {% for person in persons %}
+                    {% set k, v = person %}
+                    <div class="hcLabel">{{ _(k) }}</div>
+                    <div>{{ v.decode('utf-8') }}</div>
+                {% endfor %}
+
+            </div>
+
+            {% set person_key, person_value = h.facet_get_extra_data_field(pkg.extras, 'person_narrator') if h.facet_get_extra_data_field(pkg.extras, 'person_narrator') else (None, None) %}
+            {% if person_value %}
+                <div>
+                  {% set gender_key, gender_value = h.facet_get_extra_data_field(pkg.extras, 'person_narrator_gender') if h.facet_get_extra_data_field(pkg.extras, 'person_narrator_gender') else (None, None) %}
+                  <div class="hcLabel">{{ _('Narrator') }}</div>
+                  <div>{{ person_value.decode('utf-8') }} {% if gender_value %}({{ gender_value.decode('utf-8') }}){% endif %}</div>
+                </div>
+            {% endif %}
+{#{{ pkg.extras }}#}
+            {% set narration_date_key, narration_date_value = h.facet_get_extra_data_field(pkg.extras, 'Narration') if h.facet_get_extra_data_field(pkg.extras, 'Narration') else (None, None) %}
+            <div>
+              <div class="hcLabel">{{ _('Narration date') }}</div>
+              <div>{% if narration_date_value %} {{ narration_date_value.decode('utf-8') }} {% endif %}&nbsp;</div>
+            </div>
+
+            {% set tale_type_key, tale_type_value = h.facet_get_extra_data_field(pkg.extras, 'Tale Type') if h.facet_get_extra_data_field(pkg.extras, 'Tale Type') else (None, None) %}
+            <div>
+              <div class="hcLabel">{{ _('Tale type') }}</div>
+              <div>{% if tale_type_value %} {{ tale_type_value.decode('utf-8') }}{% endif %}&nbsp;</div>
+            </div>
+
+
+
+            {% set places = h.facet_get_similar_fields_from_extras(pkg.extras, 'place_') %}
+            <div>Places:
+                {% for place in places %}
+                    {% set k, v = place %}
+                    <div class="hcLabel">{{ _(k) }}</div>
+                    <div>{{ v.decode('utf-8') }}</div>
+                {% endfor %}
+
+            </div>
+
+            {% set place_narration_key, place_narration_value = h.facet_get_extra_data_field(pkg.extras, 'place_narration') if h.facet_get_extra_data_field(pkg.extras, 'place_narration') else (None, None) %}
+            <div>
+              <div class="hcLabel">{{ _('Narration Place') }}</div>
+              <div>{% if place_narration_value %}{{ place_narration_value.decode('utf-8') }}{% endif %}&nbsp;</div>
+            </div>
+
+{#          <a href="http://www.verhalenbank.nl/items/show/9885">http://www.verhalenbank.nl/items/show/9885</a>#}
+{#          {% snippet "snippets/organization.html", organization=org, has_context_title=true %}#}
+              {% set dataset_extent = h.get_pkg_dict_extra(c.pkg_dict, 'spatial', '') %}
+              {% if dataset_extent %}
+                {% snippet "spatial/snippets/dataset_map_sidebar.html", extent=dataset_extent %}
+              {% endif %}
+            <div class="hcMarginBottom2"></div>
+
+        {% endif %}
+      {% endblock %}
+
+      {% block package_social %}
+{#        {% snippet "snippets/social.html" %}#}
+      {% endblock %}
+
+      {% block package_license %}
+{#        {% snippet "snippets/license.html", pkg_dict=pkg %}#}
+      {% endblock %}
+
+    {% endblock %}
+  </div>
+{% endblock %}

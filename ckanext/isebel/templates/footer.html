@@ -1,0 +1,19 @@
+<!-- page footer -->
+<div class="hcContentContainer bgColorBrand2">
+  <div class="hc2columns hcMarginBottom3 hcMarginTop3 hcBasicSideMargin">
+    <div>
+      {% block intro %}
+        {% if g.site_intro %}
+          {{ h.render_markdown(g.site_intro) }}
+        {% else %}
+          {% set site_intro = '[ISEBEL](http://isebel.eu/ "ISEBEL") stands for Intelligent Search Engine for Belief Legends. At the moment, this search engine harvests folktales and metadata from three European regions: the Netherlands, Denmark and North-East Germany. The sources are the Dutch Folktale Database, the Danish Folktale Database and WossiDia – for now, the languages will be Dutch, Frisian, Danish, German and Low German. ' %}
+          {{ h.render_markdown(site_intro) }}
+        {% endif %}
+      {% endblock %}
+    </div>
+    <div>
+        {% snippet 'home/snippets/featured_organization.html' %}
+    </div>
+  </div>
+</div> <!-- / container -->
+<!-- / page footer -->

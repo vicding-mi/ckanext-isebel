@@ -1,0 +1,13 @@
+
+{% set organizations = h.get_featured_organizations(count=3) %}
+{% for organization in organizations %}
+  <div class="box org-box">
+    {% snippet 'snippets/organization_item.html', organization=organization, truncate=50, truncate_title=35 %}
+  </div>
+  <style>
+    .org-box {
+      float: left;
+      width: 33.3%;
+    }
+  </style>
+{% endfor %}

@@ -1,0 +1,51 @@
+{% ckan_extends %}
+
+  {% block search_facets %}
+    {% if facets %}
+      <div class="hcMarginBottom2 hcMarginTop2 hcItemsStart hcBasicSideMargin">
+        <span class="hcSmallTxt hcTxtColorGreyMid"> </span>
+        {% for field in facets.fields %}
+          {% set search_facets_items = facets.search.get(field)['items'] %}
+            <span class="hcSelectedFacet">{{ facets.titles.get(field) }}:
+          {% for value in facets.fields[field] %}
+            <span class="hcSelectedFacetType filtered pill">
+              {%- if facets.translated_fields and facets.translated_fields.has_key((field,value)) -%}
+                {{ facets.translated_fields[(field,value)] }}
+              {%- else -%}
+                {{ h.list_dict_filter(search_facets_items, 'name', 'display_name', value) }}
+              {%- endif %}
+              <a href="{{ facets.remove_field(field, value) }}" class="remove" title="{{ _('Remove') }}"><i class="fa fa-times"></i></a>
+            </span>
+          {% endfor %}
+          </span>
+        {% endfor %}
+      </div>
+{#      <a class="show-filters btn btn-default">{{ _('Filter Results') }}</a>#}
+    {% endif %}
+  {% endblock %}
+
+  {% block search_sortby %}
+    {% if sorting %}
+      <div class="form-select control-order-by">
+        <label for="field-order-by">{{ _('Order by') }}</label>
+        <select id="field-order-by" name="sort" class="form-control">
+          {% for label, value in sorting %}
+            {% if label and value %}
+              <option value="{{ value }}"{% if sorting_selected == value %} selected="selected"{% endif %}>{{ label }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+        {% block search_sortby_button %}
+        <button class="btn btn-default js-hide" type="submit">{{ _('Go') }}</button>
+        {% endblock %}
+      </div>
+    {% endif %}
+  {% endblock %}
+
+  {% block search_title %}
+    {% if not error %}
+      <div class="hcResultsHeader hcMarginBottom1 hcBasicSideMargin"><strong>{% snippet 'snippets/search_result_text.html', query=query, count=count, type=type %}</strong></div>
+    {% else %}
+      <div class="hcResultsHeader hcMarginBottom1 hcBasicSideMargin"><strong>Error</strong></div>
+    {% endif %}
+  {% endblock %}

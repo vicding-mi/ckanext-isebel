@@ -1,0 +1,24 @@
+{% extends "page.html" %}
+
+{% block subtitle %}{{ _('About') }}{% endblock %}
+
+{% block breadcrumb_content %}
+  <li class="active">{% link_for _('About'), 'home.about' %}</li>
+{% endblock %}
+
+{% block primary %}
+  <article class="module">
+    <div class="module-content">
+      {% block about %}
+        {% if g.site_about %}
+          {{ h.render_markdown(g.site_about) }}
+        {% else %}
+          {% set site_about = '[ISEBEL](http://isebel.eu/ "ISEBEL") stands for Intelligent Search Engine for Belief Legends. At the moment, this search engine harvests folktales and metadata from three European regions: the Netherlands, Denmark and North-East Germany. The sources are the Dutch Folktale Database, the Danish Folktale Database and WossiDia – for now, the languages will be Dutch, Frisian, Danish, German and Low German. The focus of [ISEBEL](http://isebel.eu/ "ISEBEL") is mainly on orally transmitted legends: traditional stories about ghosts, hauntings, devils, witches, wizards, spells, werewolves, nightmares, giants, trolls, goblins and the like, as well as stories about hidden treasures, famous robbers, underground passages and sunken castles. Queries can be made in English, or in the languages the stories are in; Boolean operators are allowed. Every story will have a link to the original database.' %}
+          {{ h.render_markdown(site_about) }}
+        {% endif %}
+      {% endblock %}
+    </div>
+  </article>
+{% endblock %}
+
+{% block secondary %}{% endblock %}

@@ -1,0 +1,12 @@
+{% ckan_extends %}
+
+{#
+  {% block datasets %}
+    {% set package_count = h.facet_orgcount(organization.name) %}
+    {% if package_count %}
+      <strong class="count">{{ organization.name }}{{ h.facet_orgcount(organization.name) }}{{ ungettext('{num} Dataset', '{num} Datasets', package_count).format(num=package_count) }}</strong>
+    {% else %}
+      <span class="count">{{ _('0 Datasets') }}</span>
+    {% endif %}
+  {% endblock %}
+#}

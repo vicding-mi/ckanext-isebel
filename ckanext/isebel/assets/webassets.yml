@@ -1,0 +1,14 @@
+# isebel-js:
+#   filter: rjsmin
+#   output: ckanext-isebel/%(version)s-isebel.js
+#   contents:
+#     - js/isebel.js
+#   extra:
+#     preload:
+#       - base/main
+
+# isebel-css:
+#   filter: cssrewrite
+#   output: ckanext-isebel/%(version)s-isebel.css
+#   contents:
+#     - css/isebel.css

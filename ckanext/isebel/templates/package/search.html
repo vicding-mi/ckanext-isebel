@@ -1,0 +1,97 @@
+{% ckan_extends %}
+
+{% block breadcrumb %}
+    {% if self.breadcrumb_content() | trim %}
+         <div class="hcBreadCrumb hcMarginBottom2 hcBasicSideMargin hcTxtColorGreyMid hcSmallTxt">
+            {% snippet 'snippets/home_breadcrumb_item.html' %}
+            <span /> /
+            {% block breadcrumb_content %}
+                {{ h.nav_link(_(dataset_type.title() + 's'), controller='package', action='search', named_route=dataset_type + '_search', highlight_actions = 'new index') }}
+            {% endblock %}
+         </div>
+    {% endif %}
+{% endblock %}
+
+{% block primary_content %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.3/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.3.3/dist/leaflet-src.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.0/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.0/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.0/dist/leaflet.markercluster-src.js"></script>
+
+    <div id="ckanext_facet_map_div" class="hcMapPlaceholder" style="height: 360px;"></div>
+
+    <script type="text/javascript">
+
+        var ckanext_facet_geosArray = [];
+        {% if map_results %}
+            {% for r in map_results %}
+                ckanext_facet_geosArray.push([{{ r[0] }}, {{ r[1] }}, "{{r[2]}}", "{{r[3]}}"]);
+            {% endfor %}
+        {% endif %}
+
+        var ckanext_facet_tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 18,
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Points &copy 2019 LINZ'
+                }),
+                ckanext_facet_latlng = L.latLng(52.3745403,4.89797550561798);
+
+        var ckanext_facet_map = L.map('ckanext_facet_map_div', {center: ckanext_facet_latlng, zoom: 5, layers: [ckanext_facet_tiles]});
+
+        var ckanext_facet_markers = L.markerClusterGroup({
+            maxClusterRadius: 30
+        });
+
+        for (var i = 0; i < ckanext_facet_geosArray.length; i++) {
+                var a = ckanext_facet_geosArray[i];
+                var title = "<a href=\"dataset\\" + a[3] + "\">"+a[2]+"</a>";
+                // var title = a[2];
+                var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title });
+                marker.bindPopup(title);
+                ckanext_facet_markers.addLayer(marker);
+        }
+
+        ckanext_facet_map.addLayer(ckanext_facet_markers);
+        ckanext_facet_geosArray = null;
+        ckanext_facet_markers = null;
+        window.onbeforeunload = function(){
+            ckanext_facet_map = null;
+            return null;
+        };
+        </script>
+
+    {{ super() }}
+    {{ h.facet_len(map_results) }}
+
+
+{% endblock %}
+
+{% block secondary %}
+  <div class="col-sm-3 hcLayoutFacets hcMarginBottom2 colorBgGreyLight hcBasicSideMargin">
+    {% block secondary_content %}
+        <div class="filters hcLayoutFacetsToggel hcMarginTop2" id="hcLayoutFacetsToggel">
+{#        {% snippet 'spatial/snippets/spatial_query.html' %}#}
+          <div>
+            {% for facet in c.facet_titles %}
+              {{ h.snippet('snippets/facet_list.html', title=c.facet_titles[facet], name=facet) }}
+            {% endfor %}
+          </div>
+          <a class="close no-text hide-filters"><i class="fa fa-times-circle"></i><span class="text">close</span></a>
+        </div>
+    {% endblock %}
+  </div>
+{% endblock %}
+
+    {% block page_pagination %}
+      {{ c.page.pager(q=c.q) }}
+    {% endblock %}
+
+      {% block package_search_results_api_inner %}
+      {% endblock %}
+
+{#{% block secondary_content %}#}
+{#    {% snippet 'spatial/snippets/spatial_query.html' %}#}
+{#    {{ super() }}#}
+{#{% endblock %}#}
