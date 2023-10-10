@@ -1703,6 +1703,7 @@ a {
     justify-content: flex-start;
 }
 
+/* Customization for CKAN navigation bar item */
 /*.hcIsNav {*/
 div.hcIsHeader ul li a {
     background-color: #C43851;
@@ -1713,6 +1714,7 @@ div.hcIsHeader ul li a {
     font-size: .85rem;
 }
 
+/* Customization for CKAN navigation bar */
 header .navbar-nav {
     display: flex;
     flex-direction: row;
