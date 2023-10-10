@@ -1,6 +1,5 @@
-{#{% resource 'facet/huc-util-is.css' %}#}
 {#{% resource 'facet/utilGA1.js' %}#}
-{% asset 'facet/facet' %}
+
 {% set dataset_type = h.default_package_type() %}
 
 {% block header_wrapper %} {% block header_account %}
@@ -75,18 +74,14 @@
       {% block header_logo %}
       {% if g.site_logo %}
 
-{#        <div class="hcRowLeft">#}
-{#          <div class="hcIsHeaderLogo"><a href="{{ h.url_for('home.index') }}"><img src="{{ h.url_for_static_or_external(g.site_logo) }}" alt="{{ g.site_title }}" title="{{ g.site_title }}" /></a></div>#}
-{#          <div>#}
-{#              <div class="hcIsHeaderToolName"><a class="hcIsHeaderToolName" href="{{ h.url_for('home.index') }}">Isebel</a></div>#}
-{#              <div class="hcIsHeaderName hcTxtColorGreyMid"><a class="hcIsHeaderName hcTxtColorGreyMid" href="{{ h.url_for('home.index') }}">Intelligent Search Engine for Belief Legends</a></div>#}
-{#          </div>#}
-{#        </div>#}
+        <div class="hcRowLeft">
+          <div class="hcIsHeaderLogo"><a href="{{ h.url_for('home.index') }}"><img src="{{ h.url_for_static_or_external(g.site_logo) }}" alt="{{ g.site_title }}" title="{{ g.site_title }}" /></a></div>
+          <div>
+              <div class="hcIsHeaderToolName"><a class="hcIsHeaderToolName" href="{{ h.url_for('home.index') }}">Isebel</a></div>
+              <div class="hcIsHeaderName hcTxtColorGreyMid"><a class="hcIsHeaderName hcTxtColorGreyMid" href="{{ h.url_for('home.index') }}">Intelligent Search Engine for Belief Legends</a></div>
+          </div>
+        </div>
 
-          <a class="logo" href="{{ h.url_for('home.index') }}">
-              <img src="{{ h.url_for_static_or_external(g.site_logo) }}" alt="{{ g.site_title }}"
-                   title="{{ g.site_title }}" />
-          </a>
       {% else %}
       <h1>
         <a href="{{ h.url_for('home.index') }}">{{ g.site_title }}</a>
@@ -120,13 +115,6 @@
 	          {% endblock %}
           </ul>
 
-      {% endblock %}
-      {% block header_site_search %}
-          <form class="d-flex site-search" action="{% url_for dataset_type ~ '.search' %}" method="get">
-              <label class="d-none" for="field-sitewide-search">{% block header_site_search_label %}{{ h.humanize_entity_type('package', dataset_type, 'search_placeholder') or _('Search Datasets...') }}{% endblock %}</label>
-              <input id="field-sitewide-search" class="form-control me-2"  type="text" name="q" placeholder="{{ _('Search') }}" aria-label="{{ h.humanize_entity_type('package', dataset_type, 'search_placeholder') or _('Search datasets...') }}"/>
-              <button class="btn" type="submit" aria-label="{{ _('Submit') }}"><i class="fa fa-search"></i></button>
-          </form>
       {% endblock %}
       </div>
     </nav>

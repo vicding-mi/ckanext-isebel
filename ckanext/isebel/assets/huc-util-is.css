@@ -1,5 +1,10 @@
 @import url("https://fonts.googleapis.com/css?family=Roboto:300,300i,700");
 
+/* scrolling fix for FDT */
+#flDebug, #flDebug * {
+overflow-y: auto;
+}
+
 html,
 body {
     padding: 0;

@@ -7,8 +7,14 @@
 #     preload:
 #       - base/main
 
-# isebel-css:
+ isebel-css:
+   filter: cssrewrite
+   output: ckanext-isebel/%(version)s-isebel.css
+   contents:
+     - huc-util-is.css
+
+# ga-css:
 #   filter: cssrewrite
 #   output: ckanext-isebel/%(version)s-isebel.css
 #   contents:
-#     - css/isebel.css
+#     - huc-util-is.css

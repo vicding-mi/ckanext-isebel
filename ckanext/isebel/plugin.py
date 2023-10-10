@@ -1,4 +1,5 @@
 from ckan.lib import helpers as h
+import ckan
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 import logging
@@ -135,12 +136,15 @@ def no_registering(context, data_dict):
 
 
 class IsebelPlugin(plugins.SingletonPlugin):
-    plugins.implements(plugins.IFacets)
+    plugins.implements(plugins.IFacets, inherit=True)
     plugins.implements(plugins.IPackageController, inherit=True)
     plugins.implements(plugins.IAuthFunctions, inherit=True)
     plugins.implements(plugins.IConfigurer)
+    # plugins.implements(plugins.IConfigurable)
+    # plugins.implements(plugins.IBlueprint)
+    # plugins.implements(plugins.IRoutes)
+    # plugins.implements(plugins.ITranslation)
     plugins.implements(plugins.ITemplateHelpers)
-    # plugins.implements(plugins.IRoutes, inherit=True)
 
     def get_auth_functions(self):
         return {
@@ -189,10 +193,11 @@ class IsebelPlugin(plugins.SingletonPlugin):
         # pprint(facets_dict)
         return facets_dict
 
-    def update_config(self, config_):
-        toolkit.add_template_directory(config_, "templates")
-        toolkit.add_public_directory(config_, "public")
+    def update_config(self, config):
+        toolkit.add_template_directory(config, "templates")
+        toolkit.add_public_directory(config, "public")
         toolkit.add_resource("assets", "isebel")
+        ckan.homepage_style = '4'
 
     def get_helpers(self):
         '''Register the most_popular_groups() function above as a template
