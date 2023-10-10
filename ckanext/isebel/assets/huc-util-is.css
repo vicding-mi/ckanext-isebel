@@ -1703,13 +1703,22 @@ a {
     justify-content: flex-start;
 }
 
-.hcIsNav {
+/*.hcIsNav {*/
+div.hcIsHeader ul li a {
     background-color: #C43851;
     color: #fff;
     padding: .3rem .5rem;
     border-radius: 3px;
     margin-left: 1rem;
     font-size: .85rem;
+}
+
+header .navbar-nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    height: 100%;
 }
 
 @media (min-width: 800px) {
