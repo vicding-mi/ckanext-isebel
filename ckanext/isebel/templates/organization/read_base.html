@@ -2,8 +2,7 @@
 
 
 {% block content_primary_nav %}
-  {{ h.build_nav_icon(group_type + '_read', _('Datasets'), id=c.group_dict.name) }}
-  {# h.build_nav_icon(group_type + '_activity', _('Activity Stream'), id=c.group_dict.name, offset=0) #}
-  {# h.build_nav_icon(group_type + '_about', _('About'), id=c.group_dict.name) #}
+  {{ h.build_nav_icon(group_type + '.read', h.humanize_entity_type('package', dataset_type, 'content tab') or _('Datasets'), id=group_dict.name, icon='sitemap') }}
+  {{ h.build_nav_icon(group_type + '.about', _('About'), id=group_dict.name, icon='info-circle') }}
 {% endblock %}
 
