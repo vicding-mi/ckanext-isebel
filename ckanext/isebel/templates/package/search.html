@@ -38,7 +38,6 @@
                 }),
                 ckanext_facet_latlng = L.latLng(52.3745403,4.89797550561798);
 
-        var ckanext_facet_map = L.map('ckanext_facet_map_div', {center: ckanext_facet_latlng, zoom: 5, layers: [ckanext_facet_tiles]});
 
         var ckanext_facet_markers = L.markerClusterGroup({
             maxClusterRadius: 30
@@ -53,7 +52,11 @@
                 ckanext_facet_markers.addLayer(marker);
         }
 
+        var ckanext_facet_map = L.map('ckanext_facet_map_div', {center: ckanext_facet_latlng, zoom: 5, layers: [ckanext_facet_tiles]});
+        bounds = ckanext_facet_markers.getBounds();
         ckanext_facet_map.addLayer(ckanext_facet_markers);
+        ckanext_facet_map.fitBounds(bounds);
+
         ckanext_facet_geosArray = null;
         ckanext_facet_markers = null;
         window.onbeforeunload = function(){
