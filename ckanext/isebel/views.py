@@ -405,7 +405,6 @@ def search(package_type: str = "dataset"):
         else:
             # log.info(f"### not empty q ###")
             map_results = generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
-            set_redis_key(r, redis_key, map_results)
 
         extra_vars[u'sort_by_selected'] = query[u'sort']
 
