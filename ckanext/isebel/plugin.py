@@ -7,6 +7,7 @@ import json
 import urllib.request as urllib2
 from pprint import pprint
 import requests
+import ckan.plugins.toolkit as tk
 
 log = logging.getLogger(__name__)
 
@@ -20,13 +21,13 @@ def facet_get_extra_data_field(extras, field, lang=False):
             for item_dict in extras_list:
                 k = item_dict.get('key').encode('utf-8')
                 v = item_dict.get('value').encode('utf-8')
-                if field in k:
+                if field.encode('utf-8') in k:
                     return k, v
         else:
             for item_dict in extras_list:
                 k = item_dict.get('key').encode('utf-8')
                 v = item_dict.get('value').encode('utf-8')
-                if k == field:
+                if k == field.encode('utf-8'):
                     return k, v
     return None
 
@@ -40,17 +41,17 @@ def facet_get_similar_fields_from_extras(extras, field):
         for item_dict in extras_list:
             k = item_dict.get('key').encode('utf-8')
             v = item_dict.get('value').encode('utf-8')
-            if field in k:
+            if field.encode('utf-8') in k:
                 result.append((k, v))
         return result
     return None
 
 def facet_build_nav_main(*args):
-    ''' build a set of menu items.
+    """ build a set of menu items.
 
     args: tuples of (menu type, title) eg ('login', _('Login'))
     outputs <li><a href="...">title</a></li>
-    '''
+    """
     output = ''
     for item in args:
         menu_item, title = item[:2]
@@ -135,15 +136,12 @@ def no_registering(context, data_dict):
     }
 
 
+@tk.blanket.blueprints
 class IsebelPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IFacets, inherit=True)
     plugins.implements(plugins.IPackageController, inherit=True)
     plugins.implements(plugins.IAuthFunctions, inherit=True)
     plugins.implements(plugins.IConfigurer)
-    # plugins.implements(plugins.IConfigurable)
-    # plugins.implements(plugins.IBlueprint)
-    # plugins.implements(plugins.IRoutes)
-    # plugins.implements(plugins.ITranslation)
     plugins.implements(plugins.ITemplateHelpers)
 
     def get_auth_functions(self):
