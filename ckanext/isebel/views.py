@@ -213,6 +213,59 @@ def is_empty(value: Any) -> bool:
         return not value
 
 
+def convert_to_unix_timestamp(time_to_check) -> float:
+    return (time_to_check - datetime(1970, 1, 1)).total_seconds()
+
+
+def get_redis_key(r: redis.Redis, redis_key: str, age: float = 86400.0) -> Optional[dict]:
+    """
+    Return the value associated with the key from redis if it exists and not too old
+
+    :param r: redis connection
+    :param redis_key: key to get the value from
+    :param age: age of the value in seconds
+    :return:
+    """
+    if (r.exists(redis_key)
+            and r.exists(f"{redis_key}_age")
+            and convert_to_unix_timestamp(datetime.utcnow()) - float(r.get(f"{redis_key}_age")) < age):
+        return json.loads(r.get(redis_key))
+    else:
+        return None
+
+
+def set_redis_key(r: redis.Redis, redis_key: str, value: any) -> None:
+    """
+    Set the value associated with the key in redis
+
+    :param r: redis connection
+    :param redis_key: key to set the value to
+    :param value: value to set
+    :return:
+    """
+    r.set(redis_key, json.dumps(value))
+    r.set(f"{redis_key}_age", convert_to_unix_timestamp(datetime.utcnow()))
+
+
+def generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT):
+    full_results = get_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
+    return get_map_result(full_results)
+
+
+def make_redis_key(data_dict: dict, method: str = "md5") -> str:
+    """
+    Make a redis key from the data_dict
+
+    :param data_dict: data_dict to make the key from
+    :param method: method to use to make the key
+    :return:
+    """
+    if method == "md5":
+        return hashlib.md5(json.dumps(data_dict).encode()).hexdigest()
+    else:
+        raise NotImplementedError(f"method {method} not implemented")
+
+
 @bp.route("/dataset/", methods=["GET"])
 def search(package_type: str = "dataset"):
     extra_vars: dict[str, Any] = {}
@@ -356,53 +409,6 @@ def search(package_type: str = "dataset"):
         }
 
         # TODO: add map_results
-        def convert_to_unix_timestamp(time_to_check) -> float:
-            return (time_to_check - datetime(1970, 1, 1)).total_seconds()
-
-        def get_redis_key(r: redis.Redis, redis_key: str, age: float = 86400.0) -> Optional[dict]:
-            """
-            Return the value associated with the key from redis if it exists and not too old
-
-            :param r: redis connection
-            :param redis_key: key to get the value from
-            :param age: age of the value in seconds
-            :return:
-            """
-            if (r.exists(redis_key)
-                    and r.exists(f"{redis_key}_age")
-                    and convert_to_unix_timestamp(datetime.utcnow()) - float(r.get(f"{redis_key}_age")) < age):
-                return json.loads(r.get(redis_key))
-            else:
-                return None
-
-        def set_redis_key(r: redis.Redis, redis_key: str, value: any) -> None:
-            """
-            Set the value associated with the key in redis
-
-            :param r: redis connection
-            :param redis_key: key to set the value to
-            :param value: value to set
-            :return:
-            """
-            r.set(redis_key, json.dumps(value))
-            r.set(f"{redis_key}_age", convert_to_unix_timestamp(datetime.utcnow()))
-
-        def generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT):
-            full_results = get_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
-            return get_map_result(full_results)
-
-        def make_redis_key(data_dict: dict, method: str = "md5") -> str:
-            """
-            Make a redis key from the data_dict
-
-            :param data_dict: data_dict to make the key from
-            :param method: method to use to make the key
-            :return:
-            """
-            if method == "md5":
-                return hashlib.md5(json.dumps(data_dict).encode()).hexdigest()
-            else:
-                raise NotImplementedError(f"method {method} not implemented")
 
         # def get_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT):
         r = redis.connect_to_redis()
