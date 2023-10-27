@@ -19,15 +19,17 @@ def facet_get_extra_data_field(extras, field, lang=False):
     if extras_list and isinstance(extras_list, list):
         if lang:
             for item_dict in extras_list:
-                k = item_dict.get('key').encode('utf-8')
-                v = item_dict.get('value').encode('utf-8')
-                if field.encode('utf-8') in k:
+                k = item_dict.get('key')
+                v = item_dict.get('value')
+                if field in k:
+                    # raise Exception('1 field %s not found in %s = %s' % (field, k, v))
                     return k, v
         else:
             for item_dict in extras_list:
-                k = item_dict.get('key').encode('utf-8')
-                v = item_dict.get('value').encode('utf-8')
-                if k == field.encode('utf-8'):
+                k = item_dict.get('key')
+                v = item_dict.get('value')
+                if k == field:
+                    # raise Exception('2 field %s not found in %s = %s' % (field, k, v))
                     return k, v
     return None
 
@@ -39,9 +41,9 @@ def facet_get_similar_fields_from_extras(extras, field):
     extras_list = extras
     if extras_list and isinstance(extras_list, list):
         for item_dict in extras_list:
-            k = item_dict.get('key').encode('utf-8')
-            v = item_dict.get('value').encode('utf-8')
-            if field.encode('utf-8') in k:
+            k = item_dict.get('key')
+            v = item_dict.get('value')
+            if field in k:
                 result.append((k, v))
         return result
     return None

@@ -72,13 +72,14 @@
 {% endblock %}
 
 {% block secondary %}
+    {% set search_facets = c.extra_vars or {} %}
   <div class="col-sm-3 hcLayoutFacets hcMarginBottom2 colorBgGreyLight hcBasicSideMargin">
     {% block secondary_content %}
         <div class="filters hcLayoutFacetsToggel hcMarginTop2" id="hcLayoutFacetsToggel">
 {#        {% snippet 'spatial/snippets/spatial_query.html' %}#}
           <div>
             {% for facet in c.facet_titles %}
-              {{ h.snippet('snippets/facet_list.html', title=c.facet_titles[facet], name=facet) }}
+              {{ h.snippet('snippets/facet_list.html', title=c.facet_titles[facet], name=facet, search_facets=search_facets) }}
             {% endfor %}
           </div>
           <a class="close no-text hide-filters"><i class="fa fa-times-circle"></i><span class="text">close</span></a>

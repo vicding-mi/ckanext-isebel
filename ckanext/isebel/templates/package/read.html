@@ -83,16 +83,16 @@
             <a href="{{ pkg.url }}">{{ pkg.url }}</a>
             <div>
               {%  set k, v = h.facet_get_extra_data_field(pkg.extras, 'Type') if h.facet_get_extra_data_field(pkg.extras, 'Type') else (None, None) %}
-              <strong>{% if v %} {{ v.decode('utf-8').strip().capitalize() }} {% endif %}&nbsp;</strong>
+              <strong>{% if v %} {{ v.strip().capitalize() }} {% endif %}&nbsp;</strong>
             </div>
 
             <div class="hcColumnsEqual">
               {% set key, keywords = h.facet_get_extra_data_field(pkg.extras, '_keyword', True) if h.facet_get_extra_data_field(pkg.extras, '_keyword', True) else (None, None) %}
-              {% set keywords = keywords.split(';'.encode("utf-8")) if keywords else [] %}
+              {% set keywords = keywords.split(';') if keywords else [] %}
               {% for keyword in keywords %}
                 <div class="hcIsTags">
-                    <img alt="Keyword: {{ keyword.decode('utf-8').strip() }}" src="https://d33wubrfki0l68.cloudfront.net/fb601fac0a70dc030111b00f4dd3ee7fc84458b3/6d759/images/icons/icon-tag.png" class="hcTag">
-                    <a href="{{ h.add_url_param(h.url_for(controller='dataset', action='search'), new_params={key: keyword.decode('utf-8').strip()})  }}"> {{ keyword.decode('utf-8').strip() }}</a>
+                    <img alt="Keyword: {{ keyword.strip() }}" src="https://d33wubrfki0l68.cloudfront.net/fb601fac0a70dc030111b00f4dd3ee7fc84458b3/6d759/images/icons/icon-tag.png" class="hcTag">
+                    <a href="{{ h.add_url_param(h.url_for(controller='dataset', action='search'), new_params={key: keyword.strip()})  }}"> {{ keyword.strip() }}</a>
                 </div>
               {% endfor %}
             </div>
@@ -102,7 +102,7 @@
                 {% for person in persons %}
                     {% set k, v = person %}
                     <div class="hcLabel">{{ _(k) }}</div>
-                    <div>{{ v.decode('utf-8') }}</div>
+                    <div>{{ v }}</div>
                 {% endfor %}
 
             </div>
@@ -112,20 +112,20 @@
                 <div>
                   {% set gender_key, gender_value = h.facet_get_extra_data_field(pkg.extras, 'person_narrator_gender') if h.facet_get_extra_data_field(pkg.extras, 'person_narrator_gender') else (None, None) %}
                   <div class="hcLabel">{{ _('Narrator') }}</div>
-                  <div>{{ person_value.decode('utf-8') }} {% if gender_value %}({{ gender_value.decode('utf-8') }}){% endif %}</div>
+                  <div>{{ person_value }} {% if gender_value %}({{ gender_value }}){% endif %}</div>
                 </div>
             {% endif %}
 {#{{ pkg.extras }}#}
             {% set narration_date_key, narration_date_value = h.facet_get_extra_data_field(pkg.extras, 'Narration') if h.facet_get_extra_data_field(pkg.extras, 'Narration') else (None, None) %}
             <div>
               <div class="hcLabel">{{ _('Narration date') }}</div>
-              <div>{% if narration_date_value %} {{ narration_date_value.decode('utf-8') }} {% endif %}&nbsp;</div>
+              <div>{% if narration_date_value %} {{ narration_date_value }} {% endif %}&nbsp;</div>
             </div>
 
             {% set tale_type_key, tale_type_value = h.facet_get_extra_data_field(pkg.extras, 'Tale Type') if h.facet_get_extra_data_field(pkg.extras, 'Tale Type') else (None, None) %}
             <div>
               <div class="hcLabel">{{ _('Tale type') }}</div>
-              <div>{% if tale_type_value %} {{ tale_type_value.decode('utf-8') }}{% endif %}&nbsp;</div>
+              <div>{% if tale_type_value %} {{ tale_type_value }}{% endif %}&nbsp;</div>
             </div>
 
 
@@ -135,7 +135,7 @@
                 {% for place in places %}
                     {% set k, v = place %}
                     <div class="hcLabel">{{ _(k) }}</div>
-                    <div>{{ v.decode('utf-8') }}</div>
+                    <div>{{ v }}</div>
                 {% endfor %}
 
             </div>
@@ -143,7 +143,7 @@
             {% set place_narration_key, place_narration_value = h.facet_get_extra_data_field(pkg.extras, 'place_narration') if h.facet_get_extra_data_field(pkg.extras, 'place_narration') else (None, None) %}
             <div>
               <div class="hcLabel">{{ _('Narration Place') }}</div>
-              <div>{% if place_narration_value %}{{ place_narration_value.decode('utf-8') }}{% endif %}&nbsp;</div>
+              <div>{% if place_narration_value %}{{ place_narration_value }}{% endif %}&nbsp;</div>
             </div>
 
 {#          <a href="http://www.verhalenbank.nl/items/show/9885">http://www.verhalenbank.nl/items/show/9885</a>#}
