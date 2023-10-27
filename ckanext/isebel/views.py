@@ -1,6 +1,7 @@
 # encoding: utf-8
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import inspect
@@ -174,7 +175,7 @@ def facet_loadjson(orgstr, swap=True):
 
 
 def get_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT):
-    log.info('before loop: {}'.format(data_dict_full_result))
+    # log.debug('before loop: {}'.format(data_dict_full_result))
     query_full_result = get_action('package_search')(context, data_dict_full_result)
     full_results = list()
     while query_full_result.get('results', None) and pager < PAGER_LIMIT:
@@ -390,21 +391,43 @@ def search(package_type: str = "dataset"):
             full_results = get_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
             return get_map_result(full_results)
 
+        def make_redis_key(data_dict: dict, method: str = "md5") -> str:
+            """
+            Make a redis key from the data_dict
+
+            :param data_dict: data_dict to make the key from
+            :param method: method to use to make the key
+            :return:
+            """
+            if method == "md5":
+                return hashlib.md5(json.dumps(data_dict).encode()).hexdigest()
+            else:
+                raise NotImplementedError(f"method {method} not implemented")
+
         # def get_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT):
         r = redis.connect_to_redis()
-        redis_key: str = "redis_full_results"
-        if is_empty(q):
-            # log.info(f"### empty q ###")
-            if not get_redis_key(r, redis_key):
-                # log.info(f"### not in redis or too old ###")
-                map_results = generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
-                set_redis_key(r, redis_key, map_results)
-            else:
-                # log.info(f"### in redis ###")
-                map_results = json.loads(r.get(redis_key))
+        redis_key: str = make_redis_key(data_dict, method="md5")
+
+        if r.exists(redis_key):
+            log.info(f"### {redis_key=} in redis ###")
+            map_results = json.loads(r.get(redis_key))
         else:
-            # log.info(f"### not empty q ###")
+            log.info(f"### {redis_key=} not in redis ###")
             map_results = generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
+            set_redis_key(r, redis_key, map_results)
+
+        # if is_empty(q):
+        #     # log.info(f"### empty q ###")
+        #     if not get_redis_key(r, redis_key):
+        #         # log.info(f"### not in redis or too old ###")
+        #         map_results = generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
+        #         set_redis_key(r, redis_key, map_results)
+        #     else:
+        #         # log.info(f"### in redis ###")
+        #         map_results = json.loads(r.get(redis_key))
+        # else:
+        #     # log.info(f"### not empty q ###")
+        #     map_results = generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
 
         extra_vars[u'sort_by_selected'] = query[u'sort']
 
