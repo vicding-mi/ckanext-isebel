@@ -59,9 +59,11 @@ within_tertiary
                     {% endblock %}
                     {% block facet_list_items %}
                         {% with items = items or h.get_facet_items_dict(name, search_facets) %}
+{#                            {% if name == "da_keyword" %}#}
 {#                            name: {{ name }}#}
 {#                            search facets: {{ search_facets }}#}
 {#                            gettting from function: {{ h.get_facet_items_dict(name, search_facets) }}#}
+{#                            {% endif %}#}
                             {% if items %}
 
                                 {% for item in items %}

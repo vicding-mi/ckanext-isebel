@@ -217,18 +217,53 @@ def convert_to_unix_timestamp(time_to_check) -> float:
     return (time_to_check - datetime(1970, 1, 1)).total_seconds()
 
 
-def get_redis_key(r: redis.Redis, redis_key: str, age: float = 86400.0) -> Optional[dict]:
+def delete_redis_keys(r: redis.Redis,
+                      prefix: str = "ckanext_isebel:",
+                      max_age: Optional[float] = None,
+                      limit: Optional[int] = None,
+                      ) -> None:
+    """
+    Delete keys from redis
+
+    :param max_age:
+    :param r: redis connection
+    :param key: key to delete
+    :param prefix: prefix of the keys to delete
+    :param limit: limit the number of keys to delete
+    :return:
+    """
+    clean_counter: int = 0
+    keys = r.keys(f"{prefix}*".encode("utf-8"))
+    keys = [key for key in keys if not key.endswith(b"_age")]
+
+    if limit:
+        keys = keys[:limit]
+    for key in keys:
+        if max_age is not None:
+            if not r.exists(key + b"_age") or convert_to_unix_timestamp(datetime.utcnow()) - float(r.get(key + b"_age")) > max_age:
+                r.delete(key)
+                clean_counter += 1
+        else:
+            r.delete(key)
+            clean_counter += 1
+    log.info(f"### cleaned {clean_counter}/{len(keys)} aged redis keys ###")
+
+
+def get_redis_key(r: redis.Redis, redis_key: str, age: float = 86400.0, prefix: str = "ckanext_isebel:") -> Any:
     """
     Return the value associated with the key from redis if it exists and not too old
 
+    :param prefix:
     :param r: redis connection
     :param redis_key: key to get the value from
     :param age: age of the value in seconds
     :return:
     """
     if (r.exists(redis_key)
+            and redis_key.split(":")[0] == prefix[:-1]
             and r.exists(f"{redis_key}_age")
             and convert_to_unix_timestamp(datetime.utcnow()) - float(r.get(f"{redis_key}_age")) < age):
+        log.info(f"### getting {redis_key=} from redis ###")
         return json.loads(r.get(redis_key))
     else:
         return None
@@ -252,16 +287,17 @@ def generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HA
     return get_map_result(full_results)
 
 
-def make_redis_key(data_dict: dict, method: str = "md5") -> str:
+def make_redis_key(data_dict: dict, method: str = "md5", prefix: str = "ckanext_isebel:") -> str:
     """
     Make a redis key from the data_dict
 
     :param data_dict: data_dict to make the key from
     :param method: method to use to make the key
+    :param prefix: prefix of the key
     :return:
     """
     if method == "md5":
-        return hashlib.md5(json.dumps(data_dict).encode()).hexdigest()
+        return f"{prefix}{hashlib.md5(json.dumps(data_dict).encode()).hexdigest()}"
     else:
         raise NotImplementedError(f"method {method} not implemented")
 
@@ -409,31 +445,15 @@ def search(package_type: str = "dataset"):
         }
 
         # TODO: add map_results
-
-        # def get_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT):
         r = redis.connect_to_redis()
         redis_key: str = make_redis_key(data_dict, method="md5")
 
-        if r.exists(redis_key):
-            log.info(f"### {redis_key=} in redis ###")
-            map_results = json.loads(r.get(redis_key))
-        else:
+        delete_redis_keys(r, max_age=86400.0, limit=100)
+        map_results = get_redis_key(r, redis_key)
+        if map_results is None:
             log.info(f"### {redis_key=} not in redis ###")
             map_results = generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
             set_redis_key(r, redis_key, map_results)
-
-        # if is_empty(q):
-        #     # log.info(f"### empty q ###")
-        #     if not get_redis_key(r, redis_key):
-        #         # log.info(f"### not in redis or too old ###")
-        #         map_results = generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
-        #         set_redis_key(r, redis_key, map_results)
-        #     else:
-        #         # log.info(f"### in redis ###")
-        #         map_results = json.loads(r.get(redis_key))
-        # else:
-        #     # log.info(f"### not empty q ###")
-        #     map_results = generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
 
         extra_vars[u'sort_by_selected'] = query[u'sort']
 
