@@ -426,7 +426,7 @@ def search(package_type: str = "dataset"):
 
         # loop the search query and get all the results
         # this workaround the 1000 rows solr hard limit
-        HARD_LIMIT = 1000
+        HARD_LIMIT = 10000
         # conn = get_connection_redis()
         pager = 0
         # crank up the pager limit high as using points cluster for better performance
