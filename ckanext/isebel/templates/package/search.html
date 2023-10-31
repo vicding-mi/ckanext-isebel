@@ -4,7 +4,7 @@
     {% if self.breadcrumb_content() | trim %}
          <div class="hcBreadCrumb hcMarginBottom2 hcBasicSideMargin hcTxtColorGreyMid hcSmallTxt">
             {% snippet 'snippets/home_breadcrumb_item.html' %}
-            <span /> /
+            <span></span> /
             {% block breadcrumb_content %}
              {{ h.nav_link(_(dataset_type.title() + 's'), named_route='%s.search' % dataset_type) }}
             {% endblock %}
@@ -25,34 +25,33 @@
 
     <script type="text/javascript">
 
-        var ckanext_facet_geosArray = [];
+        let ckanext_facet_geosArray = [];
         {% if map_results %}
             {% for r in map_results %}
                 ckanext_facet_geosArray.push([{{ r[0] }}, {{ r[1] }}, "{{r[2]}}", "{{r[3]}}"]);
             {% endfor %}
         {% endif %}
 
-        var ckanext_facet_tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        let ckanext_facet_tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         maxZoom: 18,
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Points &copy 2019 LINZ'
                 }),
                 ckanext_facet_latlng = L.latLng(52.3745403,4.89797550561798);
 
 
-        var ckanext_facet_markers = L.markerClusterGroup({
+        let ckanext_facet_markers = L.markerClusterGroup({
             maxClusterRadius: 30
         });
 
-        for (var i = 0; i < ckanext_facet_geosArray.length; i++) {
-                var a = ckanext_facet_geosArray[i];
-                var title = "<a href=" + a[3] + ">" + a[2] + "</a>";
-                // var title = a[2];
-                var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title });
+        for (let i = 0; i < ckanext_facet_geosArray.length; i++) {
+                let a = ckanext_facet_geosArray[i];
+                let title = "<a href=" + a[3] + ">" + a[2] + "</a>";
+                let marker = L.marker(new L.LatLng(a[0], a[1]), { title: title });
                 marker.bindPopup(title);
                 ckanext_facet_markers.addLayer(marker);
         }
 
-        var ckanext_facet_map = L.map('ckanext_facet_map_div', {center: ckanext_facet_latlng, zoom: 5, layers: [ckanext_facet_tiles]});
+        let ckanext_facet_map = L.map('ckanext_facet_map_div', {center: ckanext_facet_latlng, zoom: 5, layers: [ckanext_facet_tiles]});
         bounds = ckanext_facet_markers.getBounds();
         ckanext_facet_map.addLayer(ckanext_facet_markers);
         ckanext_facet_map.fitBounds(bounds);
