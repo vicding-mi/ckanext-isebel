@@ -449,7 +449,10 @@ def search(package_type: str = "dataset"):
         r = redis.connect_to_redis()
         redis_key: str = make_redis_key(data_dict, method="md5")
 
-        delete_redis_keys(r, max_age=86400.0, limit=100)
+        """
+        Not deleting the redis keys as datasets won't change once imported
+        """
+        # delete_redis_keys(r, max_age=86400.0, limit=100)
         map_results = get_redis_key(r, redis_key)
         if map_results is None:
             log.info(f"### {redis_key=} not in redis ###")
