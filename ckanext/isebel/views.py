@@ -175,7 +175,6 @@ def facet_loadjson(orgstr, swap=True):
 
 
 def get_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT):
-    # log.debug('before loop: {}'.format(data_dict_full_result))
     query_full_result = get_action('package_search')(context, data_dict_full_result)
     full_results = list()
     while query_full_result.get('results', None) and pager < PAGER_LIMIT:
@@ -183,10 +182,7 @@ def get_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LI
         pager += 1
 
         data_dict_full_result['start'] = pager * HARD_LIMIT
-        # log.info('in loop: {}'.format(data_dict_full_result))
         query_full_result = get_action('package_search')(context, data_dict_full_result)
-        # log.info('result: {}'.format(query_full_result.get('results', None)))
-    # log.info('full results: {}'.format(full_results))
     return full_results
 
 
@@ -438,14 +434,14 @@ def search(package_type: str = "dataset"):
         PAGER_LIMIT = 10000
 
         data_dict_full_result = {
-            'q': q,
-            'fq': fq.strip(),
-            'facet.field': list(facets.keys()),
-            'rows': HARD_LIMIT,
-            'start': 0,
-            'sort': sort_by,
-            'extras': search_extras,
-            'include_private': config.get(
+            u'q': q,
+            u'fq': fq.strip(),
+            u'facet.field': list(facets.keys()),
+            u'rows': HARD_LIMIT,
+            u'start': 0,
+            u'sort': sort_by,
+            u'extras': search_extras,
+            u'include_private': config.get(
                 u'ckan.search.default_include_private', True),
         }
 
