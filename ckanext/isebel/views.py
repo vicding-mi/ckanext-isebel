@@ -240,11 +240,16 @@ def delete_redis_keys(r: redis.Redis,
         keys = keys[:limit]
     for key in keys:
         if max_age is not None:
-            if not r.exists(key + b"_age") or convert_to_unix_timestamp(datetime.utcnow()) - float(r.get(key + b"_age")) > max_age:
+            if r.exists(key + b"_age") and convert_to_unix_timestamp(datetime.utcnow()) - float(r.get(key + b"_age")) > max_age:
+                r.delete(key)
+                r.delete(key + b"_age")
+                clean_counter += 1
+            elif not r.exists(key + b"_age"):
                 r.delete(key)
                 clean_counter += 1
         else:
             r.delete(key)
+            r.delete(key + b"_age")
             clean_counter += 1
     log.info(f"### cleaned {clean_counter}/{len(keys)} aged redis keys ###")
 
