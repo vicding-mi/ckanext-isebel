@@ -53,9 +53,9 @@ within_tertiary
                             {% set title = title or h.get_facet_title(name) %}
                             <span>{{ title }}</span>
                         </div>
-
-                        <div class="hcFacetFilter"><input id="filter_search_{{ title.lower() }}" type="text" name=""
-                                                          value="" placeholder="Type to filter"/></div>
+{#TODO: make the filter work using js #}
+{#                        <div class="hcFacetFilter"><input id="filter_search_{{ title.lower() }}" type="text" name=""#}
+{#                                                          value="" placeholder="Type to filter"/></div>#}
                     {% endblock %}
                     {% block facet_list_items %}
                         {% with items = items or h.get_facet_items_dict(name, search_facets) %}

@@ -449,7 +449,7 @@ def search(package_type: str = "dataset"):
                 u'ckan.search.default_include_private', True),
         }
 
-        # TODO: add map_results
+        # adding map_results
         r = redis.connect_to_redis()
         redis_key: str = make_redis_key(data_dict, method="md5")
 
