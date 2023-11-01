@@ -213,7 +213,7 @@ def is_empty(value: Any) -> bool:
         return not value
 
 
-def convert_to_unix_timestamp(time_to_check) -> float:
+def convert_to_unix_timestamp(time_to_check: datetime) -> float:
     return (time_to_check - datetime(1970, 1, 1)).total_seconds()
 
 
