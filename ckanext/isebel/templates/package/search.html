@@ -30,6 +30,7 @@
             {% for r in map_results %}
                 ckanext_facet_geosArray.push([{{ r[0] }}, {{ r[1] }}, "{{r[2]}}", "{{r[3]}}"]);
             {% endfor %}
+            console.log("### js map_results: " + ckanext_facet_geosArray.length)
         {% endif %}
 
         let ckanext_facet_tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

@@ -454,6 +454,9 @@ def search(package_type: str = "dataset"):
         """
         # delete_redis_keys(r, max_age=86400.0, limit=100)
         map_results = get_redis_key(r, redis_key)
+        if map_results is not None:
+            log.info(f"### Loaded {len(map_results)} map results in redis ###")
+
         if map_results is None:
             log.info(f"### {redis_key=} not in redis ###")
             map_results = generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
