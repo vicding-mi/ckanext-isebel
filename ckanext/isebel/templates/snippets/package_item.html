@@ -25,8 +25,17 @@ Example:
         {% block notes %}
           {% if notes %}
             <div class="hcListItemLong">{{ notes|urlize }}</div>
+          {% elif package.extras %}
+            {% set lang_list = ['deu', 'nds', 'nl', 'nld', 'fry', 'fy', 'dan', 'da', 'en', 'eng', 'is', 'isl'] %}
+            {% for extra in h.sorted_extras(package.extras) %}
+              {% set key, value = extra %}
+              {% if key in lang_list %}
+                <div class="hcListItemLong">{{ h.render_markdown(value.replace('\n', '<br />'), True, True)|urlize  }}</div>
+              {% endif %}
+            {% endfor %}
           {% else %}
-            <div class="hcListItemLong">{{ _("This dataset has no description") }}</div>
+{#            <div class="hcListItemLong">{{ _("This dataset has no description") }}</div>#}
+            <div class="hcListItemLong">{{ package.extras }}</div>
           {% endif %}
         {% endblock %}
 

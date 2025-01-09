@@ -39,9 +39,9 @@
       {% endblock %}
     </h2>
     {% block package_notes %}
-      {% if pkg.notes %}
+{#      {% if pkg.notes %}#}
           {# TODO: move the lang_list definiction to the controller #}
-          {% set lang_list = ['deu', 'nds', 'nl', 'nld', 'fry', 'dan', 'da', 'en', 'eng', 'is', 'isl'] %}
+          {% set lang_list = ['deu', 'nds', 'nl', 'nld', 'fry', 'fy', 'dan', 'da', 'en', 'eng', 'is', 'isl'] %}
           {% for extra in h.sorted_extras(pkg.extras) %}
               {% set key, value = extra %}
               {% if key in lang_list %}
@@ -50,7 +50,7 @@
               {% endif %}
           {% endfor %}
 {#          {{ h.render_markdown(h.get_translated(pkg, 'notes').replace('\n', '<br />'), True, True) }}#}
-      {% endif %}
+{#      {% endif %}#}
     {% endblock %}
 
   {% endblock %}
