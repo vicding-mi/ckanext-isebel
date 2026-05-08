@@ -8,6 +8,7 @@ import urllib.request as urllib2
 from pprint import pprint
 import requests
 import ckan.plugins.toolkit as tk
+import click
 
 log = logging.getLogger(__name__)
 
@@ -145,6 +146,7 @@ class IsebelPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IAuthFunctions, inherit=True)
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.ITemplateHelpers)
+    plugins.implements(plugins.IClick)
 
     def get_auth_functions(self):
         return {
@@ -215,6 +217,10 @@ class IsebelPlugin(plugins.SingletonPlugin):
                 'facet_get_similar_fields_from_extras': facet_get_similar_fields_from_extras
                 }
 
+    # IClick
+    def get_commands(self):
+        return [isebel_cli]
+
     def before_map(self, map):
         """This IRoutes implementation overrides the standard
         ``/user/register`` behaviour with a custom controller.  You
@@ -239,3 +245,30 @@ class IsebelPlugin(plugins.SingletonPlugin):
         # map.connect('/package/new', controller='package_formalchemy', action='new')
         # map.connect('/package/edit/{id}', controller='package_formalchemy', action='edit')
         return map
+
+
+# -- Click CLI commands --
+
+@click.group(name="isebel", help="ISEBEL management commands")
+def isebel_cli():
+    pass
+
+
+@isebel_cli.command(name="preload-map-cache")
+@click.option("--org", "-o", multiple=True, help="Organization name(s) to preload")
+@click.option("--all-orgs", is_flag=True, help="Preload for all organizations")
+def preload_map_cache_cmd(org, all_orgs):
+    """Pre-warm the Redis map data cache for faster search page loads."""
+    from ckanext.isebel.views import preload_map_cache
+
+    orgs = list(org) if org else None
+    if all_orgs:
+        orgs = None  # Triggers auto-discovery of all orgs
+    elif not orgs:
+        click.echo("Preloading default (all datasets) only. "
+                   "Use --all-orgs for per-organization preload.")
+        orgs = []
+
+    click.echo("Starting map cache preload...")
+    generated = preload_map_cache(organizations=orgs, username="default")
+    click.echo(f"Done! Generated {len(generated)} cache entries: {generated}")
