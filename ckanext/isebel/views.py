@@ -303,6 +303,102 @@ def make_redis_key(data_dict: dict, method: str = "md5", prefix: str = "ckanext_
         raise NotImplementedError(f"method {method} not implemented")
 
 
+def _filter_by_bbox(map_results: list, bbox_str: str) -> list:
+    """Filter map_results to points within the given bounding box.
+
+    bbox_str format: "south,west,north,east"
+    map_results entries: [lat, lng, name, url]
+    """
+    try:
+        parts = bbox_str.split(",")
+        south, west, north, east = float(parts[0]), float(parts[1]), float(parts[2]), float(parts[3])
+    except (ValueError, IndexError):
+        return map_results
+
+    return [
+        r for r in map_results
+        if south <= r[0] <= north and west <= r[1] <= east
+    ]
+
+
+def _get_map_data_from_request() -> dict[str, Any]:
+    """Parse search params from request, build map_results (via Redis), return as dict."""
+    q = request.args.get("q", "")
+    sort_by = request.args.get("sort", None)
+
+    details = _get_search_details()
+    fq = details["fq"]
+    search_extras = details["search_extras"]
+
+    facets: dict[str, str] = OrderedDict()
+    for facet in h.facets():
+        facets[facet] = facet
+    for plugin in plugins.PluginImplementations(plugins.IFacets):
+        facets = plugin.dataset_facets(facets, "dataset")
+
+    data_dict_full_result = {
+        "q": q,
+        "fq": fq.strip(),
+        "facet.field": list(facets.keys()),
+        "rows": 1000,
+        "start": 0,
+        "sort": sort_by,
+        "extras": search_extras,
+        "include_private": config.get("ckan.search.default_include_private", True),
+    }
+
+    context = cast(Context, {
+        "model": model,
+        "user": current_user.name,
+        "auth_user_obj": current_user,
+    })
+
+    r = redis.connect_to_redis()
+    redis_key = make_redis_key(data_dict_full_result)
+
+    map_results = get_redis_key(r, redis_key)
+    if map_results is not None:
+        log.debug("### Loaded %d map results from redis ###", len(map_results))
+    else:
+        log.debug("### %s not in redis, generating ###", redis_key)
+        map_results = generate_full_results(
+            context, data_dict_full_result, pager=0,
+            PAGER_LIMIT=150, HARD_LIMIT=1000,
+        )
+        set_redis_key(r, redis_key, map_results)
+
+    bbox = request.args.get("bbox", None)
+    if bbox:
+        map_results = _filter_by_bbox(map_results, bbox)
+
+    return {"points": map_results, "total": len(map_results)}
+
+
+@bp.route("/dataset/_map_data", methods=["GET"])
+def map_data():
+    """JSON endpoint returning map marker coordinates for Leaflet."""
+    try:
+        context = cast(Context, {
+            "model": model,
+            "user": current_user.name,
+            "auth_user_obj": current_user,
+        })
+        check_access("site_read", context)
+    except NotAuthorized:
+        return base.abort(403, _("Not authorized to see this page"))
+
+    try:
+        data = _get_map_data_from_request()
+    except SearchError as se:
+        log.error("Map data search error: %r", se.args)
+        data = {"points": [], "total": 0}
+    except Exception as e:
+        log.error("Map data error: %r", e)
+        data = {"points": [], "total": 0}
+
+    return data
+
+
 @bp.route("/dataset/", methods=["GET"])
 def search(package_type: str = "dataset"):
     extra_vars: dict[str, Any] = {}
@@ -420,47 +516,8 @@ def search(package_type: str = "dataset"):
         u'include_private': config.get(
             u'ckan.search.default_include_private'),
     }
-    map_results: list = []
-
     try:
         query = get_action(u'package_search')(context, data_dict)
-
-        # loop the search query and get all the results
-        # this workaround the 1000 rows solr hard limit
-        HARD_LIMIT = 1000
-        # conn = get_connection_redis()
-        pager = 0
-        # crank up the pager limit high as using points cluster for better performance
-        PAGER_LIMIT = 150
-
-        data_dict_full_result = {
-            u'q': q,
-            u'fq': fq.strip(),
-            u'facet.field': list(facets.keys()),
-            u'rows': HARD_LIMIT,
-            u'start': 0,
-            u'sort': sort_by,
-            u'extras': search_extras,
-            u'include_private': config.get(
-                u'ckan.search.default_include_private', True),
-        }
-
-        # adding map_results
-        r = redis.connect_to_redis()
-        redis_key: str = make_redis_key(data_dict, method="md5")
-
-        """
-        Not deleting the redis keys as datasets won't change once imported
-        """
-        # delete_redis_keys(r, max_age=86400.0, limit=100)
-        map_results = get_redis_key(r, redis_key)
-        if map_results is not None:
-            log.debug(f"### Loaded {len(map_results)} map results in redis ###")
-
-        if map_results is None:
-            log.debug(f"### {redis_key=} not in redis ###")
-            map_results = generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
-            set_redis_key(r, redis_key, map_results)
 
         extra_vars[u'sort_by_selected'] = query[u'sort']
 
@@ -520,7 +577,7 @@ def search(package_type: str = "dataset"):
     for key, value in extra_vars.items():
         setattr(g, key, value)
 
-    extra_vars[u"map_results"] = map_results
+    extra_vars[u"map_results"] = []  # loaded via AJAX from /dataset/_map_data
     return base.render(
         _get_pkg_template(u'search_template', package_type), extra_vars
     )
