@@ -88,16 +88,13 @@
             var bbox = [bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()].join(',');
             if (fetchPending) return;
             fetchPending = true;
-            var url = buildUrl({bbox: bbox});
-            console.log('### fetching markers: ' + url);
-            fetch(url)
+            fetch(buildUrl({bbox: bbox}))
                 .then(function(r) {
                     if (!r.ok) throw new Error('HTTP ' + r.status);
                     return r.json();
                 })
                 .then(function(data) {
                     fetchPending = false;
-                    console.log('### markers returned: ' + (data.points ? data.points.length : 0) + ' points');
                     if (!data.points || data.points.length === 0) return;
                     markerCluster = L.markerClusterGroup({maxClusterRadius: 30});
                     for (var i = 0; i < data.points.length; i++) {
@@ -132,15 +129,12 @@
         }
 
         // initial load: fetch full dataset for heatmap
-        var initUrl = buildUrl();
-        console.log('### fetching heatmap data: ' + initUrl);
-        fetch(initUrl)
+        fetch(buildUrl())
             .then(function(r) {
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 return r.json();
             })
             .then(function(data) {
-                console.log('### heatmap data returned: ' + (data.points ? data.points.length : 0) + ' points');
                 if (!data.points || data.points.length === 0) return;
                 for (var i = 0; i < data.points.length; i++) {
                     allPoints.push([data.points[i][0], data.points[i][1], 1]);
