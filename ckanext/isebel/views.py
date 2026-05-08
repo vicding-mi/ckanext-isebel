@@ -139,7 +139,7 @@ def _get_search_details() -> dict[str, Any]:
     search_extras: 'MultiDict[str, Any]' = MultiDict()
 
     for (param, value) in request.args.items(multi=True):
-        if param not in [u'q', u'page', u'sort'] \
+        if param not in [u'q', u'page', u'sort', u'bbox'] \
                 and len(value) and not param.startswith(u'_'):
             if not param.startswith(u'ext_'):
                 fields.append((param, value))
@@ -284,7 +284,13 @@ def set_redis_key(r: redis.Redis, redis_key: str, value: any) -> None:
 
 
 def generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT):
+    log.info("### generate_full_results: q=%s fq=%s rows=%d",
+             data_dict_full_result.get("q", ""),
+             data_dict_full_result.get("fq", ""),
+             data_dict_full_result.get("rows", 0))
     full_results = get_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
+    log.info("### generate_full_results: got %d datasets, %d map points",
+             len(full_results), len(get_map_result(full_results)))
     return get_map_result(full_results)
 
 
@@ -313,12 +319,31 @@ def _filter_by_bbox(map_results: list, bbox_str: str) -> list:
         parts = bbox_str.split(",")
         south, west, north, east = float(parts[0]), float(parts[1]), float(parts[2]), float(parts[3])
     except (ValueError, IndexError):
+        log.warning("### bbox: invalid bbox string: %s", bbox_str)
         return map_results
 
-    log.info("### bbox filter: south=%s west=%s north=%s east=%s, total_points=%d",
-             south, west, north, east, len(map_results))
-    if map_results:
-        log.info("### sample point: %s", map_results[0])
+    if not map_results:
+        log.info("### bbox: no points to filter (empty dataset)")
+        return []
+
+    # Compute dataset coordinate range for diagnosis
+    lats = [r[0] for r in map_results]
+    lngs = [r[1] for r in map_results]
+    log.info("### bbox filter: bbox=[%.4f,%.4f,%.4f,%.4f] "
+             "dataset_range lat=[%.4f..%.4f] lng=[%.4f..%.4f] total=%d",
+             south, west, north, east,
+             min(lats), max(lats), min(lngs), max(lngs),
+             len(map_results))
+    log.info("### bbox sample[0]=%s type=%s/%s",
+             map_results[0], type(map_results[0][0]).__name__, type(map_results[0][1]).__name__)
+
+    # Check a few samples manually
+    samples = map_results[:5]
+    for i, s in enumerate(samples):
+        lat_ok = south <= s[0] <= north
+        lng_ok = west <= s[1] <= east
+        log.info("### bbox sample[%d]: [%.4f, %.4f] lat_ok=%s lng_ok=%s",
+                 i, s[0], s[1], lat_ok, lng_ok)
 
     filtered = [
         r for r in map_results
@@ -341,8 +366,10 @@ def _get_or_generate_map_results(data_dict: dict[str, Any],
 
     context = cast(Context, {
         "model": model,
+        "session": model.Session,
         "user": username,
-        "auth_user_obj": current_user if username else None,
+        "for_view": True,
+        "auth_user_obj": current_user,
     })
 
     r = redis.connect_to_redis()
