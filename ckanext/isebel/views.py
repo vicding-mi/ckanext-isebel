@@ -13,7 +13,7 @@ from typing_extensions import TypeAlias
 from urllib.parse import urlencode
 from typing import Any, Iterable, Optional, Union, cast
 
-from flask import Blueprint
+from flask import Blueprint, jsonify
 from flask.views import MethodView
 from jinja2.exceptions import TemplateNotFound
 from werkzeug.datastructures import MultiDict
@@ -330,6 +330,9 @@ def _get_map_data_from_request() -> dict[str, Any]:
     fq = details["fq"]
     search_extras = details["search_extras"]
 
+    # Filter to dataset type only (matches the search() page behaviour)
+    fq += " +dataset_type:dataset"
+
     facets: dict[str, str] = OrderedDict()
     for facet in h.facets():
         facets[facet] = facet
@@ -389,6 +392,8 @@ def map_data():
 
     try:
         data = _get_map_data_from_request()
+        log.info("### map_data: returned %d points (bbox=%s) ###",
+                 data["total"], request.args.get("bbox", "none"))
     except SearchError as se:
         log.error("Map data search error: %r", se.args)
         data = {"points": [], "total": 0}
@@ -396,7 +401,7 @@ def map_data():
         log.error("Map data error: %r", e)
         data = {"points": [], "total": 0}
 
-    return data
+    return jsonify(data)
 
 
 @bp.route("/dataset/", methods=["GET"])

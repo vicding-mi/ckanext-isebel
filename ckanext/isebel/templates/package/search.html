@@ -45,7 +45,7 @@
         var markersVisible = false;
         var fetchPending = false;
 
-        var mapDataBase = "{{ h.url_for('isebel.map_data') }}";
+        var mapDataBase = "{{ url_for('isebel.map_data') }}";
 
         function buildUrl(params) {
             var parts = [];
@@ -88,10 +88,16 @@
             var bbox = [bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()].join(',');
             if (fetchPending) return;
             fetchPending = true;
-            fetch(buildUrl({bbox: bbox}))
-                .then(function(r) { return r.json(); })
+            var url = buildUrl({bbox: bbox});
+            console.log('### fetching markers: ' + url);
+            fetch(url)
+                .then(function(r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
                 .then(function(data) {
                     fetchPending = false;
+                    console.log('### markers returned: ' + (data.points ? data.points.length : 0) + ' points');
                     if (!data.points || data.points.length === 0) return;
                     markerCluster = L.markerClusterGroup({maxClusterRadius: 30});
                     for (var i = 0; i < data.points.length; i++) {
@@ -102,6 +108,10 @@
                     }
                     map.addLayer(markerCluster);
                     markersVisible = true;
+                })
+                .catch(function(err) {
+                    fetchPending = false;
+                    console.error('### marker fetch error: ' + err.message);
                 });
         }
 
@@ -122,9 +132,15 @@
         }
 
         // initial load: fetch full dataset for heatmap
-        fetch(buildUrl())
-            .then(function(r) { return r.json(); })
+        var initUrl = buildUrl();
+        console.log('### fetching heatmap data: ' + initUrl);
+        fetch(initUrl)
+            .then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
             .then(function(data) {
+                console.log('### heatmap data returned: ' + (data.points ? data.points.length : 0) + ' points');
                 if (!data.points || data.points.length === 0) return;
                 for (var i = 0; i < data.points.length; i++) {
                     allPoints.push([data.points[i][0], data.points[i][1], 1]);
@@ -134,6 +150,9 @@
                 } else {
                     showMarkers();
                 }
+            })
+            .catch(function(err) {
+                console.error('### heatmap fetch error: ' + err.message);
             });
 
         map.on('zoomend', onZoomEnd);
