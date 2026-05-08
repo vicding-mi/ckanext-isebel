@@ -247,7 +247,7 @@ def delete_redis_keys(r: redis.Redis,
             r.delete(key)
             r.delete(key + b"_age")
             clean_counter += 1
-    log.info(f"### cleaned {clean_counter}/{len(keys)} aged redis keys ###")
+        log.debug(f"### cleaned {clean_counter}/{len(keys)} aged redis keys ###")
 
 
 def get_redis_key(r: redis.Redis, redis_key: str, age: float = 86400.0, prefix: str = "ckanext_isebel:") -> Any:
@@ -264,7 +264,7 @@ def get_redis_key(r: redis.Redis, redis_key: str, age: float = 86400.0, prefix: 
             and redis_key.split(":")[0] == prefix[:-1]
             and r.exists(f"{redis_key}_age")
             and convert_to_unix_timestamp(datetime.utcnow()) - float(r.get(f"{redis_key}_age")) < age):
-        log.info(f"### getting {redis_key=} from redis ###")
+        log.debug(f"### getting {redis_key=} from redis ###")
         return json.loads(r.get(redis_key))
     else:
         return None
@@ -455,10 +455,10 @@ def search(package_type: str = "dataset"):
         # delete_redis_keys(r, max_age=86400.0, limit=100)
         map_results = get_redis_key(r, redis_key)
         if map_results is not None:
-            log.info(f"### Loaded {len(map_results)} map results in redis ###")
+            log.debug(f"### Loaded {len(map_results)} map results in redis ###")
 
         if map_results is None:
-            log.info(f"### {redis_key=} not in redis ###")
+            log.debug(f"### {redis_key=} not in redis ###")
             map_results = generate_full_results(context, data_dict_full_result, pager, PAGER_LIMIT, HARD_LIMIT)
             set_redis_key(r, redis_key, map_results)
 
