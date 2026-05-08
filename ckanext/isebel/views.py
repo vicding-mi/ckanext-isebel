@@ -315,10 +315,51 @@ def _filter_by_bbox(map_results: list, bbox_str: str) -> list:
     except (ValueError, IndexError):
         return map_results
 
-    return [
+    log.info("### bbox filter: south=%s west=%s north=%s east=%s, total_points=%d",
+             south, west, north, east, len(map_results))
+    if map_results:
+        log.info("### sample point: %s", map_results[0])
+
+    filtered = [
         r for r in map_results
         if south <= r[0] <= north and west <= r[1] <= east
     ]
+    log.info("### bbox filtered: %d -> %d points", len(map_results), len(filtered))
+    return filtered
+
+
+def _get_or_generate_map_results(data_dict: dict[str, Any],
+                                 username: str = "") -> list:
+    """Get map_results from Redis cache or generate and cache them.
+
+    data_dict: q, fq, facet.field, rows, start, sort, extras, include_private.
+    username: CKAN username for the Solr search context. Empty = current_user.
+    Returns list of [lat, lng, name, url].
+    """
+    if not username:
+        username = current_user.name if hasattr(current_user, "name") else ""
+
+    context = cast(Context, {
+        "model": model,
+        "user": username,
+        "auth_user_obj": current_user if username else None,
+    })
+
+    r = redis.connect_to_redis()
+    redis_key = make_redis_key(data_dict)
+
+    map_results = get_redis_key(r, redis_key)
+    if map_results is not None:
+        log.debug("### Loaded %d map results from redis ###", len(map_results))
+    else:
+        log.info("### %s not in redis, generating ###", redis_key)
+        map_results = generate_full_results(
+            context, data_dict, pager=0,
+            PAGER_LIMIT=150, HARD_LIMIT=1000,
+        )
+        set_redis_key(r, redis_key, map_results)
+
+    return map_results
 
 
 def _get_map_data_from_request() -> dict[str, Any]:
@@ -350,25 +391,7 @@ def _get_map_data_from_request() -> dict[str, Any]:
         "include_private": config.get("ckan.search.default_include_private", True),
     }
 
-    context = cast(Context, {
-        "model": model,
-        "user": current_user.name,
-        "auth_user_obj": current_user,
-    })
-
-    r = redis.connect_to_redis()
-    redis_key = make_redis_key(data_dict_full_result)
-
-    map_results = get_redis_key(r, redis_key)
-    if map_results is not None:
-        log.debug("### Loaded %d map results from redis ###", len(map_results))
-    else:
-        log.debug("### %s not in redis, generating ###", redis_key)
-        map_results = generate_full_results(
-            context, data_dict_full_result, pager=0,
-            PAGER_LIMIT=150, HARD_LIMIT=1000,
-        )
-        set_redis_key(r, redis_key, map_results)
+    map_results = _get_or_generate_map_results(data_dict_full_result)
 
     bbox = request.args.get("bbox", None)
     if bbox:
@@ -586,3 +609,71 @@ def search(package_type: str = "dataset"):
     return base.render(
         _get_pkg_template(u'search_template', package_type), extra_vars
     )
+
+
+def preload_map_cache(organizations: Optional[list[str]] = None,
+                      username: str = "",
+                      ) -> list[str]:
+    """Pre-warm the Redis map cache for default search + per-organization searches.
+
+    Returns list of Redis keys that were generated (missed cache).
+    """
+    from ckan.lib.helpers import facets as h_facets
+
+    # Build the base data_dict (without fq)
+    facet_keys: list[str] = []
+    for facet in h_facets():
+        facet_keys.append(facet)
+    for plugin_inst in plugins.PluginImplementations(plugins.IFacets):
+        facet_keys = list(plugin_inst.dataset_facets(
+            dict.fromkeys(facet_keys, ""), "dataset"
+        ).keys())
+
+    base_dict = {
+        "q": "",
+        "facet.field": facet_keys,
+        "rows": 1000,
+        "start": 0,
+        "sort": None,
+        "extras": {},
+        "include_private": config.get("ckan.search.default_include_private", True),
+    }
+
+    generated: list[str] = []
+
+    def _preload_one(fq_label: str, fq: str) -> None:
+        d = dict(base_dict, fq=fq.strip())
+        key = make_redis_key(d)
+        r = redis.connect_to_redis()
+        if get_redis_key(r, key) is not None:
+            log.info("### preload: SKIP (cached) %s", fq_label)
+            return
+        log.info("### preload: GENERATING %s (%s points so far) ###",
+                 fq_label, sum(1 for _ in generated))
+        _get_or_generate_map_results(d, username=username)
+        generated.append(fq_label)
+
+    # Default: all datasets
+    _preload_one("all", "+dataset_type:dataset")
+
+    # Per organization
+    if organizations is None:
+        # Auto-discover all orgs
+        try:
+            org_list = get_action("organization_list")(
+                {"user": username, "ignore_auth": True}, {}
+            )
+            organizations = org_list
+        except Exception as e:
+            log.warning("### preload: could not list organizations: %s", e)
+            organizations = []
+
+    for org_name in organizations:
+        _preload_one(
+            f"org={org_name}",
+            f'+dataset_type:dataset +organization:"{org_name}"',
+        )
+
+    log.info("### preload: done, generated %d/%d caches ###",
+             len(generated), 1 + len(organizations))
+    return generated
